@@ -10,3 +10,24 @@ anyhow = "1.0.70"
 clap = { version = "4.2.5", features = ["derive"] }
 serde = "1.0.160"
 walkdir = "2.3.3"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = 3
+lto = true
+incremental = true
+codegen-units = 1
+debug = false # production = false, development = true
+
+# perf & flamegraph
+#
+# cargo build --release
+# perf record -g --call-graph dwarf target/release/your-program
+# perf report
+# You can use cargo flamegraph to build and profile a Rust project by
+# specifying the --build and --profile options.
+# For example:
+# cargo flamegraph # --build --profile=release --bin <binary_name>

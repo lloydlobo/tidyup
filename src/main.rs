@@ -12,6 +12,7 @@ struct Cli {
 
 enum Commands {}
 
+// TODO: Errors -> It sorts recursively. let it only affect only one level deep.
 fn main() -> Result<()> {
     println!("Hello, world!");
     let args = Cli::parse();
@@ -73,7 +74,7 @@ fn main() -> Result<()> {
 
         for folder in folders {
             let cmd = Command::new("mkdir")
-                .arg(format!("{}{}", path, folder))
+                .arg(format!("{}/{}", path, folder))
                 .output()?;
             if !cmd.status.success() {
                 print!(
@@ -100,16 +101,20 @@ fn main() -> Result<()> {
         "#,
         );
 
-        for (k, v) in paths_schema {
-            let schema_path_value = v.as_ref().unwrap();
+        for (key, value) in paths_schema {
+            let schema_path_value = value.as_ref().unwrap();
             for prev_path in schema_path_value.iter() {
                 let filename = PathBuf::from(prev_path);
                 let filename = &filename.file_name().unwrap();
-                let new_path = format!("{base_path}{folder}", base_path = path, folder = k);
-                let new_path = format!("{}/{}", &new_path, filename.to_string_lossy().to_string());
+                let new_path = format!(
+                    "{base_path}/{folder}/{filename}",
+                    base_path = path,
+                    folder = key,
+                    filename = filename.to_string_lossy().to_string()
+                );
                 dbg!((&prev_path, "to", &new_path));
                 // TODO: See if the prev_path is in the dir at `path` so we don't repeat.
-                match Command::new("mv -n")
+                match Command::new("mv")
                     .args(["-n", prev_path, &new_path])
                     .output()
                 {
@@ -125,7 +130,7 @@ fn main() -> Result<()> {
                     }
                 };
             }
-            dbg!(&(k, v));
+            dbg!(&(key, value));
         }
 
         // let cmd = Command::new("ls").arg("-a").spawn()?;
