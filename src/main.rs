@@ -10,7 +10,14 @@ use walkdir::WalkDir;
 type Result<T> = anyhow::Result<T>;
 
 #[derive(Parser)]
+#[clap(
+    name = "tidyup",
+    author = "Lloyd Lobo",
+    about = r#"Tidy up your your unorganized folders.
+Arrange all scattered file of a path into folders related to their extensions."#
+)]
 struct Cli {
+    /// The path to the folder that needs to be organized. If not specified, the current working directory is used.
     path: Option<String>,
 }
 
