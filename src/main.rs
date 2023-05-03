@@ -103,6 +103,24 @@ fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
     Ok(paths)
 }
 
+fn sort_files_by_size(folder_path: &Path) -> Result<Vec<PathBuf>> {
+    let mut files: Vec<PathBuf> = WalkDir::new(folder_path)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|e| e.file_type().is_file())
+        .map(|e| e.path().to_path_buf())
+        .collect();
+
+    files.sort_by(|a, b| {
+        a.metadata()
+            .unwrap()
+            .len()
+            .cmp(&b.metadata().unwrap().len())
+    });
+
+    Ok(files)
+}
+
 // Input Output
 // Take in path
 // list all types of file and/or FUTURE:Folder.
@@ -124,7 +142,7 @@ fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use std::{collections::HashSet};
+    use std::collections::HashSet;
 
     use super::*;
 
