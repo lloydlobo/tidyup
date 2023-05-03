@@ -27,6 +27,9 @@ fn main() -> Result<()> {
     let args = Cli::parse();
 
     if let Some(ref path) = args.path {
+        let path_current = PathBuf::from(&path).canonicalize()?;
+        debug_assert!(&path_current.is_absolute());
+
         let path_ext: Vec<(String, Vec<String>)> = read_path_extensions(path)?;
 
         let folders: HashSet<_> = path_ext.iter().map(|(ext, _)| ext).collect();
@@ -53,7 +56,7 @@ fn main() -> Result<()> {
 
         println!(
             "Finished sorting files in `{}` according to their extensions.",
-            path
+            path_current.display()
         );
     }
 
@@ -110,6 +113,7 @@ fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
     Ok(paths)
 }
 
+#[allow(dead_code)]
 fn sort_files_by_size(folder_path: &Path) -> Result<Vec<PathBuf>> {
     let mut files: Vec<PathBuf> = WalkDir::new(folder_path)
         .into_iter()
