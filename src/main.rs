@@ -14,20 +14,20 @@ struct Cli {
     path: Option<String>,
 }
 
-enum Commands {}
+// enum Commands {}
 
 fn main() -> Result<()> {
     let args = Cli::parse();
 
     if let Some(ref path) = args.path {
-        let history: Vec<(String, Vec<String>)> = get_history(path)?;
+        let path_ext: Vec<(String, Vec<String>)> = read_path_extensions(path)?;
 
-        let folders: HashSet<_> = history.iter().map(|(ext, _)| ext).collect();
+        let folders: HashSet<_> = path_ext.iter().map(|(ext, _)| ext).collect();
         let base_path = PathBuf::from(path);
 
         create_folders(&base_path, &folders)?;
 
-        for (ext, paths) in &history {
+        for (ext, paths) in &path_ext {
             for prev_path in paths {
                 let filename = Path::new(prev_path).file_name().unwrap();
                 let new_path = base_path.join(ext).join(filename);
@@ -77,7 +77,7 @@ fn create_folders(base_path: &Path, folders: &HashSet<&String>) -> Result<()> {
     Ok(())
 }
 
-fn get_history(path: &str) -> Result<Vec<(String, Vec<String>)>> {
+fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
     let mut history: Vec<(String, Vec<String>)> = Vec::new();
 
     for entry in WalkDir::new(path).into_iter() {
@@ -126,6 +126,11 @@ mod tests {
 
     #[test]
     fn it_works() {
+        assert!(4 == 2 + 2);
+    }
+
+    #[test]
+    fn read_path_extensions() {
         assert!(4 == 2 + 2);
     }
 }
