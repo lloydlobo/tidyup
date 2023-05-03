@@ -90,40 +90,52 @@ struct Cli {
 fn main() -> Result<()> {
     let args = Cli::parse();
 
-    if let Some(ref path) = args.path {
-        let path_current = PathBuf::from(&path).canonicalize()?;
-        debug_assert!(&path_current.is_absolute());
+    // Use current directory if path is not specified.
+    let path = args.path.unwrap_or_else(|| ".".into());
+    let path_current = PathBuf::from(&path).canonicalize()?;
+    debug_assert!(&path_current.is_absolute());
 
-        let path_absolute = path_current.to_string_lossy().to_string();
-        let path_ext: Vec<(String, Vec<String>)> = read_path_extensions(&path_absolute)?;
+    let path_absolute = path_current.to_string_lossy().to_string();
+    println!(
+        "Are you sure you want to tidy up the files in {}? y/N",
+        path_absolute
+    );
+    let mut user_approved_input = String::new();
+    std::io::stdin().read_line(&mut user_approved_input)?;
 
-        let folders: HashSet<_> = path_ext.iter().map(|(ext, _)| ext).collect();
-        let base_path = PathBuf::from(path_absolute);
+    if user_approved_input.trim().to_lowercase() != "y" {
+        println!("Aborting");
+        return Ok(());
+    }
 
-        create_folders(&base_path, &folders).with_context(|| anyhow!("Should create folders"))?;
+    let path_ext: Vec<(String, Vec<String>)> = read_path_extensions(&path_absolute)?;
 
-        for (ext, paths) in &path_ext {
-            for prev_path in paths {
-                let filename = Path::new(prev_path).file_name().unwrap();
-                let new_path = base_path.join(ext).join(filename);
-                if let Err(err) = fs::rename(prev_path, &new_path) {
-                    println!(
-                        "Error: failed to move `{}` to `{}`: {}",
-                        prev_path,
-                        new_path.display(),
-                        err
-                    );
-                } else {
-                    println!("Moved `{}` to `{}`", prev_path, new_path.display());
-                }
+    let folders: HashSet<_> = path_ext.iter().map(|(ext, _)| ext).collect();
+    let base_path = PathBuf::from(path_absolute);
+
+    create_folders(&base_path, &folders).with_context(|| anyhow!("Should create folders"))?;
+
+    for (ext, paths) in &path_ext {
+        for prev_path in paths {
+            let filename = Path::new(prev_path).file_name().unwrap();
+            let new_path = base_path.join(ext).join(filename);
+            if let Err(err) = fs::rename(prev_path, &new_path) {
+                println!(
+                    "Error: failed to move `{}` to `{}`: {}",
+                    prev_path,
+                    new_path.display(),
+                    err
+                );
+            } else {
+                println!("Moved `{}` to `{}`", prev_path, new_path.display());
             }
         }
-
-        println!(
-            "Finished sorting files in `{}` according to their extensions.",
-            path_current.display()
-        );
     }
+
+    println!(
+        "Finished sorting files in `{}` according to their extensions.",
+        path_current.display()
+    );
 
     Ok(())
 }
