@@ -78,18 +78,18 @@ fn create_folders(base_path: &Path, folders: &HashSet<&String>) -> Result<()> {
 }
 
 fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
-    let mut history: Vec<(String, Vec<String>)> = Vec::new();
+    let mut paths: Vec<(String, Vec<String>)> = Vec::new();
 
     for entry in WalkDir::new(path).into_iter() {
         let entry_path = entry.as_ref().unwrap().path();
         if entry_path.is_file() {
             if let Some(os_str) = entry_path.extension() {
-                history
+                paths
                     .iter_mut()
                     .find(|(ext, _)| ext == os_str.to_str().unwrap())
                     .map(|(_, paths)| paths.push(entry_path.to_string_lossy().to_string()))
                     .unwrap_or_else(|| {
-                        history.push((
+                        paths.push((
                             os_str.to_owned().to_string_lossy().to_string(),
                             vec![entry_path.to_string_lossy().to_string()],
                         ))
@@ -100,7 +100,7 @@ fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
         }
     }
 
-    Ok(history)
+    Ok(paths)
 }
 
 // Input Output
@@ -123,14 +123,25 @@ fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
 
     #[test]
-    fn it_works() {
-        assert!(4 == 2 + 2);
-    }
+    fn test_read_path_extensions() {
+        let path = ".";
+        let result = read_path_extensions(path);
+        assert!(result.is_ok());
+        let paths: Vec<(String, Vec<String>)> = result.unwrap();
+        // Check that the vector contains tuples with the expected format.
+        for (ext, files) in paths {
+            assert_eq!(ext.is_empty(), false);
+            assert_eq!(files.is_empty(), false);
+            for file in files {
+                assert!(file.ends_with(&format!(".{}", ext)));
+            }
+        }
 
-    #[test]
-    fn read_path_extensions() {
-        assert!(4 == 2 + 2);
+        assert_eq!(4, 2 + 2);
     }
 }

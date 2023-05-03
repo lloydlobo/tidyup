@@ -22,6 +22,9 @@ incremental = true
 codegen-units = 1
 debug = false # production = false, development = true
 
+[dev-dependencies]
+pretty_assertions = "1.3.0"
+
 # perf & flamegraph
 #
 # cargo build --release
