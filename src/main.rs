@@ -124,6 +124,7 @@ fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
+    use std::collections::HashSet;
 
     use super::*;
 
@@ -141,7 +142,38 @@ mod tests {
                 assert!(file.ends_with(&format!(".{}", ext)));
             }
         }
+    }
 
-        assert_eq!(4, 2 + 2);
+    #[test]
+    fn test_create_folders() -> Result<()> {
+        // Create a temporary directory.
+        let temp_dir = tempfile::tempdir()?;
+        let base_path = temp_dir.path();
+        assert!(base_path.to_str().unwrap().to_string().starts_with("/tmp")); // "/tmp/.tmphLZCpR"
+
+        // Create a set of folders, some which already exist.
+        let data: Vec<String> = ["folder1", "folder2", "folder3"]
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        let folders: HashSet<&String> = data.iter().collect();
+        let existing_folder_path = base_path.join("folder2");
+        fs::create_dir(existing_folder_path)?;
+
+        // Call the create_folders function.
+        let result = create_folders(base_path, &folders);
+
+        // Assert that the function succeeded and created the expected folders.
+        assert!(result.is_ok());
+        let created_folders: HashSet<String> = fs::read_dir(base_path)?
+            .filter_map(|x| x.ok())
+            .map(|entry| entry.path())
+            .filter(|path| path.is_dir())
+            .map(|path| path.file_name().unwrap().to_string_lossy().to_string())
+            .collect();
+        let created_folders: HashSet<&String> = created_folders.iter().collect();
+        assert_eq!(created_folders, folders);
+
+        Ok(())
     }
 }
