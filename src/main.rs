@@ -1,4 +1,67 @@
-use anyhow::Context;
+//! # Tidyup
+
+//! Tidyup is a command-line tool that organizes unorganized folders. It arranges all scattered files in a given path into folders related to their extensions.
+//!
+//! ## Usage
+//!
+//! ```bash
+//! tidyup [OPTIONS]
+//! ```
+//!
+//! ## Options
+//!
+//! - `-h, --help`: Prints help information
+//! - `-V, --version`: Prints version information
+//! - `-p, --path <PATH>`: The path to the folder that needs to be organized. If not specified, the current working directory is used.
+//!
+//! ## Examples
+//!
+//! ```bash
+//! # Organize the files in the current working directory
+//! tidyup
+//!
+//! # Organize the files in the specified directory
+//! tidyup -p /my/folder
+//! ```
+//!
+//! ## Implementation
+//!
+//! The `tidyup` tool uses Rust's `clap` crate to define and parse command-line arguments. It also uses `walkdir` crate to iterate over the files and directories in a given path.
+//!
+//! ### `create_folders`
+//!
+//! This function creates folders for each unique file extension found in the given path.
+//!
+//! ```rust
+//! fn create_folders(base_path: &Path, folders: &HashSet<&String>) -> Result<(), anyhow::Error>
+//! ```
+//!
+//! - `base_path`: A reference to the base path where the folders should be created.
+//! - `folders`: A reference to a HashSet containing the unique file extensions found in the path.
+//!
+//! ### `read_path_extensions`
+//!
+//! This function reads all the file extensions and corresponding file paths in a given path.
+//!
+//! ```rust
+//! fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>>, anyhow::Error>
+//! ```
+//!
+//! - `path`: A reference to the path where the files should be read from.
+//!
+//! ### `main`
+//!
+//! The `main` function handles the command-line arguments, calls the necessary functions to organize the files, and prints the output to the console.
+//!
+//! ```rust
+//! fn main() -> Result<(), anyhow::Error>
+//! ```
+//!
+//! ## License
+//!
+//! This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+//!
+use anyhow::{anyhow, Context};
 use clap::Parser;
 use std::{
     collections::HashSet,
@@ -9,6 +72,7 @@ use walkdir::WalkDir;
 
 type Result<T> = anyhow::Result<T>;
 
+// TODO: If no paths are provided, it should use the current path, but prompt with a y/N first.
 #[derive(Parser)]
 #[clap(
     name = "tidyup",
@@ -30,12 +94,13 @@ fn main() -> Result<()> {
         let path_current = PathBuf::from(&path).canonicalize()?;
         debug_assert!(&path_current.is_absolute());
 
-        let path_ext: Vec<(String, Vec<String>)> = read_path_extensions(path)?;
+        let path_absolute = path_current.to_string_lossy().to_string();
+        let path_ext: Vec<(String, Vec<String>)> = read_path_extensions(&path_absolute)?;
 
         let folders: HashSet<_> = path_ext.iter().map(|(ext, _)| ext).collect();
-        let base_path = PathBuf::from(path);
+        let base_path = PathBuf::from(path_absolute);
 
-        create_folders(&base_path, &folders)?;
+        create_folders(&base_path, &folders).with_context(|| anyhow!("Should create folders"))?;
 
         for (ext, paths) in &path_ext {
             for prev_path in paths {
@@ -63,6 +128,24 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// This function creates folders for each unique file extension found in the given path.
+///
+/// # Arguments
+///
+/// * `base_path` - A reference to the base path where the folders should be created.
+/// * `folders` - A reference to a HashSet containing the unique file extensions found in the path.
+///
+/// # Returns
+///
+/// This function returns `Result<()>`, which is an `anyhow::Result` indicating success or failure.
+///
+/// # Example
+///
+/// ```rust
+/// let base_path = PathBuf::from("/my/path");
+/// let folders = ["pdf", "docx"].iter().map(|s| s.to_string()).collect::<HashSet<_>>();
+/// create_folders(&base_path, &folders)?;
+/// ```
 fn create_folders(base_path: &Path, folders: &HashSet<&String>) -> Result<()> {
     for folder in folders.iter() {
         let folder_path = base_path.join(folder);
@@ -87,6 +170,22 @@ fn create_folders(base_path: &Path, folders: &HashSet<&String>) -> Result<()> {
     Ok(())
 }
 
+/// This function reads all the file extensions and corresponding file paths in a given path.
+///
+/// # Arguments
+///
+/// * `path` - A reference to the path where the files should be read from.
+///
+/// # Returns
+///
+/// This function returns `Result<Vec<(String, Vec<String>)>>`, which is an `anyhow::Result` indicating success or failure.
+///
+/// # Example
+///
+/// ```rust
+/// let path = "/my/path";
+/// let paths = read_path_extensions(path)?;
+/// ```
 fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
     let mut paths: Vec<(String, Vec<String>)> = Vec::new();
 
