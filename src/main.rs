@@ -124,7 +124,7 @@ fn read_path_extensions(path: &str) -> Result<Vec<(String, Vec<String>)>> {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use std::collections::HashSet;
+    use std::{collections::HashSet};
 
     use super::*;
 
@@ -152,11 +152,11 @@ mod tests {
         assert!(base_path.to_str().unwrap().to_string().starts_with("/tmp")); // "/tmp/.tmphLZCpR"
 
         // Create a set of folders, some which already exist.
-        let data: Vec<String> = ["folder1", "folder2", "folder3"]
+        let binding = ["folder1", "folder2", "folder3"]
             .iter()
             .map(ToString::to_string)
-            .collect();
-        let folders: HashSet<&String> = data.iter().collect();
+            .collect::<Vec<_>>();
+        let folders: HashSet<&String> = binding.iter().collect();
         let existing_folder_path = base_path.join("folder2");
         fs::create_dir(existing_folder_path)?;
 
