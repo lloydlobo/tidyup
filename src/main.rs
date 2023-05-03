@@ -1,7 +1,7 @@
-use anyhow::{Context};
+use anyhow::Context;
 use clap::Parser;
 use std::{
-    collections::{HashSet},
+    collections::HashSet,
     fs,
     path::{Path, PathBuf},
 };
@@ -97,7 +97,7 @@ fn get_history(path: &str) -> Result<Vec<(String, Vec<String>)>> {
             } else {
                 dbg!("No extension");
             }
-        } 
+        }
     }
 
     Ok(history)
@@ -120,3 +120,12 @@ fn get_history(path: &str) -> Result<Vec<(String, Vec<String>)>> {
 // move files into their respective dir.
 // cd back to original path.
 // ...
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn it_works() {
+        assert!(4 == 2 + 2);
+    }
+}
